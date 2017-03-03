@@ -1,0 +1,25 @@
+{
+  "name": "tema1",
+  "description": "",
+  "main": "server.js",
+  "authors": [
+    "cypmaster14 <lila.lazar@info.uaic.ro>"
+  ],
+  "license": "ISC",
+  "homepage": "",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "angular-loading-bar": "^0.9.0",
+    "angular-material": "^1.1.3",
+    "material-design-icons": "^3.0.1",
+    "sweetalert2": "^6.4.2",
+    "ngSweetAlert": "angular-sweetalert#^1.1.2",
+    "materialize": "^0.98.0"
+  }
+}

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Plot retrieval</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="../bower_components/angular-material/angular-material.min.css">
+        <script src="../bower_components/angular/angular.min.js"></script>
+        <script src="../bower_components/angular-animate/angular-animate.min.js"></script>
+        <script src="../bower_components/angular-aria/angular-aria.min.js"></script>
+        <script src="../bower_components/angular-messages/angular-messages.min.js"></script>
+        <script src="../bower_components/angular-material/angular-material.min.js"></script>
+        <!-- Sweat alert -->
+        <link rel="stylesheet" href="../bower_components/sweetalert/dist/sweetalert.css" >
+        <script src="../bower_components/ngSweetAlert/SweetAlert.min.js"></script>
+        <script src="../bower_components/sweetalert/dist/sweetalert.min.js"></script>
+
+        <script src="index.js"></script>
+    </head>
+    <body ng-app="MyApp" ng-controller="AppCtrl as ctrl">
+        <div class="container" ng-style="{'display':ctrl.activated}">
+            <md-progress-linear md-mode="indeterminate"></md-progress-linear>
+        </div>
+
+        <md-content layout-xs="column">
+            <div class="md-padding" ng-cloak="" layout="column"
+                 flex-xs flex-gt-xs="50">
+
+                <md-card>
+                    <md-card-title>
+                        <md-card-title-text>
+                            <span class="md-headline">Plot retrieval</span>
+                            <span class="md-subhead">Ceva</span>
+                        </md-card-title-text>
+                    </md-card-title>
+
+                    <md-card-content>
+                        <div layout="row">
+                            <md-input-container>
+                                <label>Movie name</label>
+                                <input ng-model="ctrl.movieName">
+                            </md-input-container>
+
+
+                            <md-input-container>
+                                <label>Language</label>
+                                <md-select ng-model="ctrl.languageSelected">
+                                    <md-option ng-repeat="language in ctrl.languages" ng-value="language.value">
+                                        {{language.label}}
+                                    </md-option>
+                                </md-select>
+                            </md-input-container>
+                        </div>
+                        <md-card-actions layout="row" layout-align="start center">
+                            <md-button class="md-raised md-primary" ng-click="ctrl.getPlot()">Get plot</md-button>
+                        </md-card-actions>
+                        <br>
+                        <p ng-bind="ctrl.moviePlot">
+                        </p>
+                    </md-card-content>
+                </md-card>
+            </div>
+        </md-content>
+    </body>
+</html>
