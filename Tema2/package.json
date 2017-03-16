@@ -11,6 +11,7 @@
   "license": "ISC",
   "dependencies": {
     "assert": "^1.4.1",
+    "mongo-sanitize": "^1.0.0",
     "mongoose": "^4.8.6"
   }
 }
