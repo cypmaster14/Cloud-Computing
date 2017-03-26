@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Title</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+    <!-- jQuery library -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+
+    <!-- Latest compiled JavaScript -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/css/bootstrap-select.min.css">
+
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-select/1.12.2/js/bootstrap-select.min.js"></script>
+    <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/1.3.6/socket.io.min.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.4.0/bootbox.min.js"></script>
+
+
+    <script src="./index.js"></script>
+    <link rel="stylesheet" href="./index.css"></link>
+</head>
+
+<body>
+    <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#myModal" id="userNameButton" style="display: none">
+        Launch demo modal
+    </button>
+
+    <h2 id="showUserName"> </h2>
+    <h2 id="numberOfUsers"></h2>
+    <div>
+        <select name="selector" id="selector">
+            </select>
+        <button id="selectPlayerButton" type="button" class="btn btn-primary">Go</button>
+
+    </div>
+
+    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" id="myModal" data-backdrop="static"
+        data-keyboard="false">
+        <div class=" modal-dialog " role="document ">
+            <div class="modal-content ">
+                <div class="modal-header ">
+                    <button type="button " class="close " data-dismiss="modal " aria-label="Close "><span aria-hidden="true ">&times;</span></button>
+                    <h4 class="modal-title " id="myModalLabel ">Modal title</h4>
+                </div>
+                <div class="modal-body ">
+                    <p> Enter userName </p>
+                    <input type="text" name="userName" id="inputUserName">
+                </div>
+                <div class="modal-footer ">
+                    <button type="button " class="btn btn-primary" id="enterUsername">Enter</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <br><br><br>
+    <h2 id="turnStatus"></h2>
+    <h3 id="typeOfPiece"></h3>
+
+
+    <div id="tic-tac-toe">
+        <div class="span3 new_span">
+            <div class="row">
+                <h1 class="span3">Tic Tac Toe</h1>
+                <div class="span3">
+                    <div class="input-prepend input-append">
+                        <span class="add-on win_text" id="yourScoreLabel">O won</span><strong id="you_win" class="win_times add-on">0</strong>
+                        <span class="add-on">time(s)</span>
+                    </div>
+                    <div class="input-prepend input-append">
+                        <span class="add-on win_text" id="opponentScoreLabel">X won</span><strong id="opponent_win" class="win_times add-on">0</strong>
+                        <span class="add-on">time(s)</span>
+                    </div>
+
+                </div>
+
+
+
+            </div>
+            <ul class="row" id="game">
+                <li id="one" class="btn span1">+</li>
+                <li id="two" class="btn span1">+</li>
+                <li id="three" class="btn span1">+</li>
+                <li id="four" class="btn span1">+</li>
+                <li id="five" class="btn span1">+</li>
+                <li id="six" class="btn span1">+</li>
+                <li id="seven" class="btn span1">+</li>
+                <li id="eight" class="btn span1">+</li>
+                <li id="nine" class="btn span1">+</li>
+            </ul>
+            <div class="clr">&nbsp;</div>
+            <div class="row">
+                <button id="reset" class="btn-success btn span3">
+                    Restart
+                </button>
+                <button id="exit" class="btn-success btn span3">
+                    Exit
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
