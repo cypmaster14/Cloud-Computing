@@ -23,41 +23,47 @@
     <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/bootbox.js/4.4.0/bootbox.min.js"></script>
 
 
+    <script src="//rawgit.com/saribe/eModal/master/dist/eModal.min.js"></script>
+
     <script src="./index.js"></script>
     <link rel="stylesheet" href="./index.css"></link>
 </head>
 
 <body>
-    <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#myModal" id="userNameButton" style="display: none">
+    <div id="gameOptions">
+
+        <button type="button" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#myModal" id="userNameButton" style="display: none">
         Launch demo modal
     </button>
 
-    <h2 id="showUserName"> </h2>
-    <h2 id="numberOfUsers"></h2>
-    <div>
-        <select name="selector" id="selector">
+        <h2 id="showUserName"> </h2>
+        <h2 id="numberOfUsers"></h2>
+        <div>
+            <select name="selector" id="selector">
             </select>
-        <button id="selectPlayerButton" type="button" class="btn btn-primary">Go</button>
+            <button id="selectPlayerButton" type="button" class="btn btn-primary">Go</button>
 
-    </div>
+        </div>
 
-    <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" id="myModal" data-backdrop="static"
-        data-keyboard="false">
-        <div class=" modal-dialog " role="document ">
-            <div class="modal-content ">
-                <div class="modal-header ">
-                    <button type="button " class="close " data-dismiss="modal " aria-label="Close "><span aria-hidden="true ">&times;</span></button>
-                    <h4 class="modal-title " id="myModalLabel ">Modal title</h4>
-                </div>
-                <div class="modal-body ">
-                    <p> Enter userName </p>
-                    <input type="text" name="userName" id="inputUserName">
-                </div>
-                <div class="modal-footer ">
-                    <button type="button " class="btn btn-primary" id="enterUsername">Enter</button>
+        <div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" id="myModal" data-backdrop="static"
+            data-keyboard="false">
+            <div class=" modal-dialog " role="document ">
+                <div class="modal-content ">
+                    <div class="modal-header ">
+                        <button type="button " class="close " data-dismiss="modal " aria-label="Close "><span aria-hidden="true ">&times;</span></button>
+                        <h4 class="modal-title " id="myModalLabel ">Modal title</h4>
+                    </div>
+                    <div class="modal-body ">
+                        <p> Enter userName </p>
+                        <input type="text" name="userName" id="inputUserName">
+                    </div>
+                    <div class="modal-footer ">
+                        <button type="button " class="btn btn-primary" id="enterUsername">Enter</button>
+                    </div>
                 </div>
             </div>
         </div>
+
     </div>
 
     <br><br><br>

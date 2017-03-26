@@ -15,11 +15,8 @@ $(function () {
         console.log("Ready function");
         $("#userNameButton").trigger('click');
         $("#enterUsername").click(function () {
-
             userName = $('#inputUserName').val();
             console.log(userName);
-            $("#showUserName").html("Hello " + userName);
-            $('#myModal').modal('hide');
             startCommunication();
         });
 
@@ -57,34 +54,43 @@ $(function () {
         socket = io.connect("http://localhost:3000");
         socket.emit('add_user', userName);
 
+        socket.on('username_already_used', function () {
+            var message = `${userName} is already used`;
+            eModal.alert(message);
+        });
+
         socket.on('log_in', function (data) {
             console.log('log_in');
-            $("#numberOfUsers").html("Number of users:" + data.numberOfUsers);
             console.log("Users:", data.onlineUsers);
             $('#selector')
                 .find('option')
                 .remove()
                 .end();
             var onlineUsers = data.onlineUsers;
+            var numberOfUsers = 0;
             for (let user of onlineUsers) {
                 if (user !== userName) {
                     $('#selector').append($('<option>', {
                         value: user,
                         text: user
                     }));
+                    numberOfUsers++;
                 }
             }
-
+            $("#numberOfUsers").html("Number of users:" + numberOfUsers);
+            displayPlayerInfo();
         });
 
         socket.on("user_joined", function (data) {
             console.log("User_joined");
-            $("#numberOfUsers").html("Number of users:" + data.numberOfUsers);
             var newUser = data.username;
             $('#selector').append($('<option>', {
                 value: newUser,
                 text: newUser
             }));
+            var numberOfUsers = $('#selector > option').length;
+            console.log(numberOfUsers);
+            $('#numberOfUsers').text("Number of users:" + numberOfUsers);
             console.log(data);
         });
 
@@ -136,12 +142,16 @@ $(function () {
                     "to": data.from,
                     "from": userName
                 });
+            } else {
+                var message = `${data.from} refused your invitation`;
+                eModal.alert(message);
             }
 
 
         });
 
         //configure the second player( the one who received the invitation)
+        // as putea sa apelez metoda start_game deoarece am cod redundant
         socket.on('start_game', function (data) {
             console.log('start_game', data);
             yourTurn = false;
@@ -154,6 +164,9 @@ $(function () {
             $('#yourScoreLabel').html(userName);
             $('#turnStatus').html("Your turn:" + yourTurn);
             $('#typeOfPiece').html("You are with:" + piece);
+            $('opponent_win').text('0');
+            $('you_win').text('0');
+            $('#gameOptions').hide();
             opponent = data.from;
             console.log("Oponent", opponent);
             gameHost = opponent;
@@ -193,90 +206,30 @@ $(function () {
             restoreTable();
         });
 
+
+        socket.on('player_pressed_exit', function () {
+            hideTicTacToeGame();
+            showGameOptions();
+            socket.emit('opponent_exits');
+        });
+
+
+        function displayPlayerInfo() {
+            $("#showUserName").html("Hello " + userName);
+            $('#myModal').modal('hide');
+        }
+
         function startGame(opponent) {
             $('#tic-tac-toe').show();
             $("#yourScoreLabel").html(userName);
             $('#opponentScoreLabel').html(opponent);
             piece = "O";
             yourTurn = true;
-            $('#turnStatus').html("Your turn:" + yourTurn)
+            $('#turnStatus').html("Your turn:" + yourTurn);
             $('#typeOfPiece').html("You are with:" + piece);
-        }
-
-
-        function test() {
-            // JavaScript Document
-            $(document).ready(function () {
-                var x = "x"
-                var o = "o"
-                var count = 0;
-                var o_win = 0;
-                var x_win = 0;
-                $('#game li').click(function () {
-
-                    if ($("#one").hasClass('o') && $("#two").hasClass('o') && $("#three").hasClass('o') || $("#four").hasClass('o') && $("#five").hasClass('o') && $("#six").hasClass('o') || $("#seven").hasClass('o') && $("#eight").hasClass('o') && $("#nine").hasClass('o') || $("#one").hasClass('o') && $("#four").hasClass('o') && $("#seven").hasClass('o') || $("#two").hasClass('o') && $("#five").hasClass('o') && $("#eight").hasClass('o') || $("#three").hasClass('o') && $("#six").hasClass('o') && $("#nine").hasClass('o') || $("#one").hasClass('o') && $("#five").hasClass('o') && $("#nine").hasClass('o') || $("#three").hasClass('o') && $("#five").hasClass('o') && $("#seven").hasClass('o')) {
-                        alert('O has won the game. Start a new game')
-                        $("#game li").text("+");
-                        $("#game li").removeClass('disable')
-                        $("#game li").removeClass('o')
-                        $("#game li").removeClass('x')
-                        $("#game li").removeClass('btn-primary')
-                        $("#game li").removeClass('btn-info')
-                    } else if ($("#one").hasClass('x') && $("#two").hasClass('x') && $("#three").hasClass('x') || $("#four").hasClass('x') && $("#five").hasClass('x') && $("#six").hasClass('x') || $("#seven").hasClass('x') && $("#eight").hasClass('x') && $("#nine").hasClass('x') || $("#one").hasClass('x') && $("#four").hasClass('x') && $("#seven").hasClass('x') || $("#two").hasClass('x') && $("#five").hasClass('x') && $("#eight").hasClass('x') || $("#three").hasClass('x') && $("#six").hasClass('x') && $("#nine").hasClass('x') || $("#one").hasClass('x') && $("#five").hasClass('x') && $("#nine").hasClass('x') || $("#three").hasClass('x') && $("#five").hasClass('x') && $("#seven").hasClass('x')) {
-                        alert('X wins has won the game. Start a new game')
-                        $("#game li").text("+");
-                        $("#game li").removeClass('disable')
-                        $("#game li").removeClass('o')
-                        $("#game li").removeClass('x')
-                        $("#game li").removeClass('btn-primary')
-                        $("#game li").removeClass('btn-info')
-                    } else if (count == 9) {
-                        alert('Its a tie. It will restart.')
-                        $("#game li").text("+");
-                        $("#game li").removeClass('disable')
-                        $("#game li").removeClass('o')
-                        $("#game li").removeClass('x')
-                        $("#game li").removeClass('btn-primary')
-                        $("#game li").removeClass('btn-info')
-                        count = 0
-                    } else if ($(this).hasClass('disable')) {
-                        alert('Already selected')
-                    } else if (count % 2 == 0) {
-                        count++
-                        $(this).text(o)
-                        $(this).addClass('disable o btn-primary')
-                        if ($("#one").hasClass('o') && $("#two").hasClass('o') && $("#three").hasClass('o') || $("#four").hasClass('o') && $("#five").hasClass('o') && $("#six").hasClass('o') || $("#seven").hasClass('o') && $("#eight").hasClass('o') && $("#nine").hasClass('o') || $("#one").hasClass('o') && $("#four").hasClass('o') && $("#seven").hasClass('o') || $("#two").hasClass('o') && $("#five").hasClass('o') && $("#eight").hasClass('o') || $("#three").hasClass('o') && $("#six").hasClass('o') && $("#nine").hasClass('o') || $("#one").hasClass('o') && $("#five").hasClass('o') && $("#nine").hasClass('o') || $("#three").hasClass('o') && $("#five").hasClass('o') && $("#seven").hasClass('o')) {
-                            alert('O wins')
-                            count = 0
-                            o_win++
-                            $('#o_win').text(o_win)
-                        }
-                    } else {
-                        count++
-                        $(this).text(x)
-                        $(this).addClass('disable x btn-info')
-                        if ($("#one").hasClass('x') && $("#two").hasClass('x') && $("#three").hasClass('x') || $("#four").hasClass('x') && $("#five").hasClass('x') && $("#six").hasClass('x') || $("#seven").hasClass('x') && $("#eight").hasClass('x') && $("#nine").hasClass('x') || $("#one").hasClass('x') && $("#four").hasClass('x') && $("#seven").hasClass('x') || $("#two").hasClass('x') && $("#five").hasClass('x') && $("#eight").hasClass('x') || $("#three").hasClass('x') && $("#six").hasClass('x') && $("#nine").hasClass('x') || $("#one").hasClass('x') && $("#five").hasClass('x') && $("#nine").hasClass('x') || $("#three").hasClass('x') && $("#five").hasClass('x') && $("#seven").hasClass('x')) {
-                            alert('X wins')
-                            count = 0
-                            x_win++
-                            $('#x_win').text(x_win)
-                        }
-                    }
-
-                });
-                $("#reset").click(function () {
-                    $("#game li").text("+");
-                    $("#game li").removeClass('disable')
-                    $("#game li").removeClass('o')
-                    $("#game li").removeClass('x')
-                    $("#game li").removeClass('btn-primary')
-                    $("#game li").removeClass('btn-info')
-                    count = 0
-
-                });
-            });
-
-
+            $('opponent_win').text('0');
+            $('you_win').text('0');
+            $('#gameOptions').hide();
         }
 
     }
@@ -290,7 +243,7 @@ $(function () {
             $(this).text(piece);
             $(this).addClass("disable x btn-info");
             yourTurn = false;
-            $('#turnStatus').html("Your turn:" + yourTurn)
+            $('#turnStatus').html("Your turn:" + yourTurn);
             socket.emit('change_turn', {
                 "move": event.target.id,
                 "piece": piece,
@@ -305,6 +258,7 @@ $(function () {
 
     $("#exit").click(function () {
         console.log("Exit button");
+        playerExitTheGame();
     });
 
     $("#reset").click(function () {
@@ -326,6 +280,28 @@ $(function () {
             $('#' + tile).text('+');
             $('#' + tile).removeClass("disable x btn-info");
         }
+        gameEnded = false;
+    }
+
+    function playerExitTheGame() {
+        //I have to hide the game
+        hideTicTacToeGame();
+        showGameOptions();
+        //I have to tell the other opponent that I exit the game
+        socket.emit('player_pressed_exit', {
+            "gameHost": gameHost,
+            "to": opponent
+        });
+    }
+
+    function hideTicTacToeGame() {
+        $('#tic-tac-toe').hide();
+        $('#turnStatus').hide();
+        $('#typeOfPiece').hide();
+    }
+
+    function showGameOptions() {
+        $('#gameOptions').show();
     }
 
 });

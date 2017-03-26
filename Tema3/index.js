@@ -30,27 +30,30 @@ io.on('connection', function (socket) {
     var nameOfUser = "";
     console.log("User connected");
     socket.on('add_user', function (username) {
-        socket.username = username;
-        nameOfUser = username;
-        //pentru a ii afisa celul nou conectat cati utilizatori sunt logati
-        socket.emit('log_in', {
-            numberOfUsers: numberOfUsers,
-            onlineUsers: Object.keys(onlineUsers)
-        });
 
-        //broadcast to all other client that a person has connected
-        socket.broadcast.emit("user_joined", {
-            username: username,
-            numberOfUsers: numberOfUsers
-        });
+        if (onlineUsers[username] !== undefined) {
+            socket.emit('username_already_used');
+        } else {
 
-        console.log("Adaung un user:", nameOfUser);
-        onlineUsers[username] = socket.id;
-        numberOfUsers++;
-        console.log("Numarul de useri log_in:", numberOfUsers);
+            socket.username = username;
+            nameOfUser = username;
+            //pentru a ii afisa celul nou conectat cati utilizatori sunt logati
+            socket.emit('log_in', {
+                numberOfUsers: numberOfUsers,
+                onlineUsers: Object.keys(onlineUsers)
+            });
 
+            //broadcast to all other client that a person has connected
+            socket.broadcast.emit("user_joined", {
+                username: username,
+                numberOfUsers: numberOfUsers
+            });
 
-
+            console.log("Adaung un user:", nameOfUser);
+            onlineUsers[username] = socket.id;
+            numberOfUsers++;
+            console.log("Numarul de useri log_in:", numberOfUsers);
+        }
 
 
     });
@@ -100,9 +103,11 @@ io.on('connection', function (socket) {
         });
     });
 
-
+    // During this event I want to remove the two players that starts a new game 
+    //from the list of online users
     socket.on('entered_into_game', function (data) {
         console.log("Client entered into a game", data.from);
+        playerEnteredIntoAGame(data.from);
         delete onlineUsers[data.from];
 
         console.log(Object.keys(onlineUsers));
@@ -117,7 +122,7 @@ io.on('connection', function (socket) {
     });
 
     function playerEnteredIntoAGame(player) {
-        playersEnrolledInAGame[data.from] = onlineUsers[player];  //player_name => player_socket
+        playersEnrolledInAGame[player] = onlineUsers[player]; //player_name => player_socket
     }
 
     socket.on("start_game", function (data) {
@@ -133,7 +138,7 @@ io.on('connection', function (socket) {
         //Know i have to check if it is a winner move
         const winningMove = userWon(data.piece, data.gameHost);
         if (!winningMove) {
-            socket.broadcast.to(onlineUsers[data.to]).emit('opponent_move', {
+            socket.broadcast.to(playersEnrolledInAGame[data.to]).emit('opponent_move', {
                 "move": data.move,
                 "piece": data.piece,
             });
@@ -145,7 +150,7 @@ io.on('connection', function (socket) {
             });
 
             //I send to the opponent that he/she lost
-            socket.broadcast.to(onlineUsers[data.to]).emit('end_game', {
+            socket.broadcast.to(playersEnrolledInAGame[data.to]).emit('end_game', {
                 "move": data.move,
                 "piece": data.piece,
                 'win': false
@@ -158,9 +163,62 @@ io.on('connection', function (socket) {
     socket.on('restart_game', function (data) {
         console.log("[Restart game]", data);
         restoreTable(data.gameHost);
-        socket.broadcast.to(onlineUsers[data.to]).emit('restart_game');
+        socket.broadcast.to(playersEnrolledInAGame[data.to]).emit('restart_game');
     });
 
+
+    socket.on('player_pressed_exit', function (data) {
+        //A player pressed exit button
+        //I have to remove him from the playersEnrolledInAGame
+        //I have to add him to online players
+        //Delete the games from the list of games ( dict games)
+        //I have to tell the other player that his opponent exit the game
+        onlineUsers[nameOfUser] = playersEnrolledInAGame[nameOfUser];
+        delete playersEnrolledInAGame[nameOfUser];
+
+        socket.emit('log_in', {
+            numberOfUsers: numberOfUsers,
+            onlineUsers: Object.keys(onlineUsers)
+        });
+
+        numberOfUsers++;
+
+        socket.broadcast.emit('user_joined', {
+            numberOfUsers: numberOfUsers,
+            username: nameOfUser
+        });
+
+
+
+        delete games[data.gameHost];
+        socket.broadcast.to(playersEnrolledInAGame[data.to]).emit('player_pressed_exit');
+
+        console.log('I sent the opponent that I exit the game');
+
+        console.log('I delete all the record of the game');
+
+    });
+
+    socket.on('opponent_exits', function () {
+        onlineUsers[nameOfUser] = playersEnrolledInAGame[nameOfUser];
+        delete playersEnrolledInAGame[nameOfUser];
+
+        console.log('I delete the second player of the game');
+
+        socket.emit('log_in', {
+            numberOfUsers: numberOfUsers,
+            onlineUsers: Object.keys(onlineUsers)
+        });
+
+        numberOfUsers++;
+
+        socket.broadcast.emit('user_joined', {
+            numberOfUsers: numberOfUsers,
+            username: nameOfUser
+        });
+
+
+    });
 
 });
 
