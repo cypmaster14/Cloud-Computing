@@ -9,6 +9,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "appmetrics-dash": "^3.1.0",
+    "cfenv": "^1.0.4",
     "express": "^4.15.2",
     "socket.io": "^1.7.3"
   }

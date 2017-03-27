@@ -5,10 +5,10 @@ const io = require('socket.io')(server);
 const PORT = process.env.PORT || 3000;
 const path = require('path');
 
-let numberOfUsers = 0;
-let onlineUsers = {};
-let games = {};
-let playersEnrolledInAGame = {};
+let onlineUsers = {}; // map player_name => player socket
+let games = {}; // map player_1(host) =>  tic-tac-toe table
+let playersEnrolledInAGame = {}; //map player_name => player_socket
+let activeGames = {}; // map player_1(gameHost) => player_2 (guest)
 
 app.use(express.static(path.resolve("./public")));
 
@@ -38,43 +38,49 @@ io.on('connection', function (socket) {
             socket.username = username;
             nameOfUser = username;
             //pentru a ii afisa celul nou conectat cati utilizatori sunt logati
+            // broadcastNewListOfUsers(socket, nameOfUser);
             socket.emit('log_in', {
-                numberOfUsers: numberOfUsers,
                 onlineUsers: Object.keys(onlineUsers)
             });
 
             //broadcast to all other client that a person has connected
             socket.broadcast.emit("user_joined", {
-                username: username,
-                numberOfUsers: numberOfUsers
+                username: nameOfUser,
             });
 
             console.log("Adaung un user:", nameOfUser);
             onlineUsers[username] = socket.id;
-            numberOfUsers++;
-            console.log("Numarul de useri log_in:", numberOfUsers);
+            console.log("Numarul de useri log_in:", Object.keys(onlineUsers).length);
         }
 
 
     });
 
     socket.on('disconnect', function () {
+        //I have to check if he is enrolled in a game
+        //If it is I have to tell to his opponent that the game is over because one player left the game
+        //I have to move the remain player to onlineUsers
+        if (playersEnrolledInAGame[nameOfUser] !== undefined) {
+            for (let player in activeGames) {
+                if (player === nameOfUser) {
+                    const opponent = activeGames[player];
+                    socket.broadcast.to(playersEnrolledInAGame[opponent]).emit("opponent_left_game");
+                    delete playersEnrolledInAGame[nameOfUser];
+                    delete activeGames[nameOfUser];
+                    break;
+
+                } else if (activeGames[player] === nameOfUser) {
+                    socket.broadcast.to(playersEnrolledInAGame[player]).emit("opponent_left_game");
+                    delete playersEnrolledInAGame[activeGames[player]];
+                    delete activeGames[player];
+                    break;
+                }
+            }
+        }
+
         console.log("Client disconnected:", nameOfUser);
-        delete onlineUsers[nameOfUser];
-        console.log("Am eliminat user-ul", nameOfUser);
-
-        console.log(Object.keys(onlineUsers));
-        numberOfUsers--;
-        console.log("Au mai ramas:", numberOfUsers, " activi");
-
-        socket.broadcast.emit('log_in', {
-            numberOfUsers: numberOfUsers - 1 >= 0 ? numberOfUsers - 1 : 0,
-            onlineUsers: Object.keys(onlineUsers)
-        });
-
-
+        userIsNotLongerAvailable(nameOfUser, socket);
     });
-
 
     socket.on('contact_user', function (data) {
         console.log(`[Contact_User] ${data}`);
@@ -105,28 +111,17 @@ io.on('connection', function (socket) {
 
     // During this event I want to remove the two players that starts a new game 
     //from the list of online users
+    //It will be called by the two players
     socket.on('entered_into_game', function (data) {
         console.log("Client entered into a game", data.from);
         playerEnteredIntoAGame(data.from);
-        delete onlineUsers[data.from];
-
-        console.log(Object.keys(onlineUsers));
-        numberOfUsers--;
-        console.log("Au mai ramas:", numberOfUsers, " activi");
-
-        socket.broadcast.emit('log_in', {
-            numberOfUsers: numberOfUsers - 1 >= 0 ? numberOfUsers - 1 : 0,
-            onlineUsers: Object.keys(onlineUsers)
-        });
-
+        userIsNotLongerAvailable(data.from, socket);
     });
 
-    function playerEnteredIntoAGame(player) {
-        playersEnrolledInAGame[player] = onlineUsers[player]; //player_name => player_socket
-    }
 
     socket.on("start_game", function (data) {
         console.log("[Start_Game]", data);
+        activeGames[data.from] = data.to;
         socket.broadcast.to(onlineUsers[data.to]).emit('start_game', {
             from: data.from
         });
@@ -135,9 +130,10 @@ io.on('connection', function (socket) {
     socket.on('change_turn', function (data) {
         console.log("[Change turn]", data);
         games[data.gameHost][data.move] = data.piece;
-        //Know i have to check if it is a winner move
+
         const winningMove = userWon(data.piece, data.gameHost);
         if (!winningMove) {
+            console.log("Nu a fost o miscare castigatoare.Trimit adversarului miscarea", data.to);
             socket.broadcast.to(playersEnrolledInAGame[data.to]).emit('opponent_move', {
                 "move": data.move,
                 "piece": data.piece,
@@ -166,7 +162,6 @@ io.on('connection', function (socket) {
         socket.broadcast.to(playersEnrolledInAGame[data.to]).emit('restart_game');
     });
 
-
     socket.on('player_pressed_exit', function (data) {
         //A player pressed exit button
         //I have to remove him from the playersEnrolledInAGame
@@ -176,15 +171,14 @@ io.on('connection', function (socket) {
         onlineUsers[nameOfUser] = playersEnrolledInAGame[nameOfUser];
         delete playersEnrolledInAGame[nameOfUser];
 
+
+        // broadcastNewListOfUsers(socket, nameOfUser);
         socket.emit('log_in', {
-            numberOfUsers: numberOfUsers,
             onlineUsers: Object.keys(onlineUsers)
         });
 
-        numberOfUsers++;
 
         socket.broadcast.emit('user_joined', {
-            numberOfUsers: numberOfUsers,
             username: nameOfUser
         });
 
@@ -195,8 +189,26 @@ io.on('connection', function (socket) {
 
         console.log('I sent the opponent that I exit the game');
 
+        //Remove the game from activeGames
+        delete activeGames[data.gameHost];
         console.log('I delete all the record of the game');
 
+    });
+
+    socket.on('ack_opponent_left_game', function () {
+        onlineUsers[nameOfUser] = playersEnrolledInAGame[nameOfUser];
+        delete playersEnrolledInAGame[nameOfUser];
+
+        console.log("[Opponent left game] Change status of remain player to onlineUser");
+
+        // broadcastNewListOfUsers(socket,nameOfUser);
+        socket.emit('log_in', {
+            onlineUsers: Object.keys(onlineUsers)
+        });
+
+        socket.broadcast.emit('user_joined', {
+            username: nameOfUser
+        });
     });
 
     socket.on('opponent_exits', function () {
@@ -204,16 +216,12 @@ io.on('connection', function (socket) {
         delete playersEnrolledInAGame[nameOfUser];
 
         console.log('I delete the second player of the game');
-
+        // broadcastNewListOfUsers(socket, nameOfUser);
         socket.emit('log_in', {
-            numberOfUsers: numberOfUsers,
             onlineUsers: Object.keys(onlineUsers)
         });
 
-        numberOfUsers++;
-
         socket.broadcast.emit('user_joined', {
-            numberOfUsers: numberOfUsers,
             username: nameOfUser
         });
 
@@ -230,6 +238,22 @@ function checkEmailAvailability(email) {
     }
 
     return true;
+}
+
+function userIsNotLongerAvailable(username, socket) {
+    delete onlineUsers[username];
+    console.log("Am eliminat user-ul", username);
+
+    console.log("Au mai ramas:", Object.keys(onlineUsers), " activi");
+
+    socket.broadcast.emit('log_in', {
+        onlineUsers: Object.keys(onlineUsers)
+    });
+
+}
+
+function playerEnteredIntoAGame(player) {
+    playersEnrolledInAGame[player] = onlineUsers[player]; //player_name => player_socket
 }
 
 
@@ -309,4 +333,16 @@ function restoreTable(gameHost) {
         games[gameHost][tile] = "";
     }
     console.log(games[gameHost]);
+}
+
+function broadcastNewListOfUsers(socket, nameOfUser) {
+
+    socket.emit('log_in', {
+        onlineUsers: Object.keys(onlineUsers)
+    });
+
+    socket.broadcast.emit('user_joined', {
+        username: nameOfUser
+    });
+
 }

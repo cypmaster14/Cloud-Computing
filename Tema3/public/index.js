@@ -14,31 +14,11 @@ $(function () {
         $('#tic-tac-toe').hide();
         console.log("Ready function");
         $("#userNameButton").trigger('click');
-        $("#enterUsername").click(function () {
-            userName = $('#inputUserName').val();
-            console.log(userName);
-            startCommunication();
-        });
 
     });
 
     $('#myModal').on('shown.bs.modal', function () {
         $('#inputUserName').focus();
-    });
-
-    $('#selectPlayerButton').click(function () {
-        var oppositePlayer = get_opposite_player();
-        socket.emit('contact_user', {
-            "from": userName,
-            "to": oppositePlayer
-        });
-
-    });
-
-
-    $('#exit').click(function () {
-        $('#tic-tac-toe').hide();
-        // trebuie sa adaug si chestiile legate socket-uri
     });
 
 
@@ -102,34 +82,15 @@ $(function () {
         socket.on('invitation', function (data) {
             var oppositePlayer = data.from;
             console.log("Invitation received from:", oppositePlayer);
+            sendInvitation(oppositePlayer);
 
-            bootbox.confirm({
-                title: "Invitation received",
-                message: `Player ${oppositePlayer} wants to play with you`,
-                buttons: {
-                    cancel: {
-                        label: '<i class="fa fa-times"></i>Cancel'
-                    },
-                    confirm: {
-                        label: '<i class="fa fa-check"></i> Confirm'
-                    }
-                },
-                callback: function (result) {
-                    console.log("Answer:", result);
-                    socket.emit('invitation_answer', {
-                        "from": userName,
-                        "to": oppositePlayer,
-                        "answer": result
-                    });
-                }
-            });
         });
 
         //Configure the first player, the one who send the invitation
         socket.on('invitation_answer', function (data) {
             console.log("[Invitation Answer] Received answer:", data);
             if (data.answer) {
-                startGame(data.from);
+                startGame(data.from, true, "O");
                 opponent = data.from;
                 gameHost = userName;
 
@@ -147,26 +108,18 @@ $(function () {
                 eModal.alert(message);
             }
 
-
         });
 
         //configure the second player( the one who received the invitation)
         // as putea sa apelez metoda start_game deoarece am cod redundant
         socket.on('start_game', function (data) {
             console.log('start_game', data);
-            yourTurn = false;
             socket.emit('entered_into_game', {
                 "from": userName
             });
-            piece = "X";
-            $('#tic-tac-toe').show();
-            $("#opponentScoreLabel").html(data.from);
-            $('#yourScoreLabel').html(userName);
-            $('#turnStatus').html("Your turn:" + yourTurn);
-            $('#typeOfPiece').html("You are with:" + piece);
-            $('opponent_win').text('0');
-            $('you_win').text('0');
-            $('#gameOptions').hide();
+
+            startGame(data.from, false, "X");
+
             opponent = data.from;
             console.log("Oponent", opponent);
             gameHost = opponent;
@@ -213,27 +166,46 @@ $(function () {
             socket.emit('opponent_exits');
         });
 
+        socket.on('opponent_left_game', function () {
+            hideTicTacToeGame();    
+            showGameOptions();
+            socket.emit('ack_opponent_left_game');
+        });
+
 
         function displayPlayerInfo() {
             $("#showUserName").html("Hello " + userName);
             $('#myModal').modal('hide');
         }
 
-        function startGame(opponent) {
+        function startGame(opponent, turn, playerPiece) {
+            yourTurn = turn;
+            piece = playerPiece;
             $('#tic-tac-toe').show();
             $("#yourScoreLabel").html(userName);
             $('#opponentScoreLabel').html(opponent);
-            piece = "O";
-            yourTurn = true;
             $('#turnStatus').html("Your turn:" + yourTurn);
             $('#typeOfPiece').html("You are with:" + piece);
             $('opponent_win').text('0');
             $('you_win').text('0');
             $('#gameOptions').hide();
         }
-
     }
 
+    $("#enterUsername").click(function () {
+        userName = $('#inputUserName').val();
+        console.log(userName);
+        startCommunication();
+    });
+
+    $('#selectPlayerButton').click(function () {
+        var oppositePlayer = get_opposite_player();
+        socket.emit('contact_user', {
+            "from": userName,
+            "to": oppositePlayer
+        });
+
+    });
 
     $('#game li').click(function () {
         console.log("Initial piece value:", $(this).text());
@@ -302,6 +274,30 @@ $(function () {
 
     function showGameOptions() {
         $('#gameOptions').show();
+    }
+
+    function sendInvitation(oppositePlayer) {
+
+        bootbox.confirm({
+            title: "Invitation received",
+            message: `Player ${oppositePlayer} wants to play with you`,
+            buttons: {
+                cancel: {
+                    label: '<i class="fa fa-times"></i>Cancel'
+                },
+                confirm: {
+                    label: '<i class="fa fa-check"></i> Confirm'
+                }
+            },
+            callback: function (result) {
+                console.log("Answer:", result);
+                socket.emit('invitation_answer', {
+                    "from": userName,
+                    "to": oppositePlayer,
+                    "answer": result
+                });
+            }
+        });
     }
 
 });
