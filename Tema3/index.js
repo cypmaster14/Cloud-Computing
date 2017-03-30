@@ -97,11 +97,14 @@ io.on('connection', function (socket) {
 
     socket.on('invitation_answer', function (data) {
         console.log('[Invitation]', data);
-        matrix = {};
-        for (let tile of tiles) {
-            matrix[tile] = "";
+        if(data.answer){
+            matrix = {};
+            for (let tile of tiles) {
+                matrix[tile] = "";
+            }
+            games[data.to] = matrix;
+
         }
-        games[data.to] = matrix;
         console.log("All Games:", games);
         socket.broadcast.to(onlineUsers[data.to]).emit("invitation_answer", {
             "answer": data.answer,
@@ -118,7 +121,6 @@ io.on('connection', function (socket) {
         userIsNotLongerAvailable(data.from, socket);
     });
 
-
     socket.on("start_game", function (data) {
         console.log("[Start_Game]", data);
         activeGames[data.from] = data.to;
@@ -133,11 +135,22 @@ io.on('connection', function (socket) {
 
         const winningMove = userWon(data.piece, data.gameHost);
         if (!winningMove) {
-            console.log("Nu a fost o miscare castigatoare.Trimit adversarului miscarea", data.to);
-            socket.broadcast.to(playersEnrolledInAGame[data.to]).emit('opponent_move', {
-                "move": data.move,
-                "piece": data.piece,
-            });
+            if (isATie(data.gameHost)) {
+                socket.emit('isATie', {
+                    "yourTurn": false
+                });
+                socket.broadcast.to(playersEnrolledInAGame[data.to]).emit('isATie', {
+                    "yourTurn": true,
+                    "move":data.move,
+                    "piece":data.piece
+                });
+            } else {
+                console.log("Nu a fost o miscare castigatoare.Trimit adversarului miscarea", data.to);
+                socket.broadcast.to(playersEnrolledInAGame[data.to]).emit('opponent_move', {
+                    "move": data.move,
+                    "piece": data.piece,
+                });
+            }
         } else {
 
             //I send to the user who realised the last move that he won
@@ -256,7 +269,6 @@ function playerEnteredIntoAGame(player) {
     playersEnrolledInAGame[player] = onlineUsers[player]; //player_name => player_socket
 }
 
-
 function userWon(piece, gameHost) {
     const table = games[gameHost];
     console.log(table);
@@ -303,6 +315,16 @@ function userWon(piece, gameHost) {
     return false;
 
 
+}
+
+function isATie(gameHost) {
+    const table = games[gameHost];
+    for (let key in table) {
+        if (table[key] === "") {
+            return false;
+        }
+    }
+    return true;
 }
 
 function convertToPosition(position) {

@@ -133,6 +133,18 @@ $(function () {
             $('#turnStatus').html("Your turn:" + yourTurn);
         });
 
+        socket.on('isATie', function (data) {
+            gameEnded = true;
+            yourTurn = data.yourTurn;
+            $('#turnStatus').html("Your turn:" + yourTurn);
+            if (data.move !== undefined) {
+                $('#' + data.move).text(data.piece);
+                $('#' + data.move).addClass("disable x btn-info");
+            }
+            console.log("Is a tie");
+            eModal.alert("Is a tie");
+        });
+
 
         socket.on('end_game', function (data) {
             var score;
@@ -141,7 +153,7 @@ $(function () {
                 score = parseInt($('#you_win').text());
                 score++;
                 $("#you_win").text(score);
-                alert('You won');
+                eModal.alert("You won");
             } else {
                 yourTurn = true;
                 $('#' + data.move).text(data.piece);
@@ -150,7 +162,7 @@ $(function () {
                 score = parseInt($('#opponent_win').text());
                 score++;
                 $("#opponent_win").text(score);
-                alert("Sorry :((( You lost");
+                eModal.alert("Sorry :((( You lost");
             }
         });
 
@@ -167,7 +179,7 @@ $(function () {
         });
 
         socket.on('opponent_left_game', function () {
-            hideTicTacToeGame();    
+            hideTicTacToeGame();
             showGameOptions();
             socket.emit('ack_opponent_left_game');
         });
@@ -186,9 +198,10 @@ $(function () {
             $('#opponentScoreLabel').html(opponent);
             $('#turnStatus').html("Your turn:" + yourTurn);
             $('#typeOfPiece').html("You are with:" + piece);
-            $('opponent_win').text('0');
-            $('you_win').text('0');
+            $('#opponent_win').html('0');
+            $('#you_win').html('0');
             $('#gameOptions').hide();
+            restoreTable();
         }
     }
 
@@ -208,6 +221,10 @@ $(function () {
     });
 
     $('#game li').click(function () {
+        if (gameEnded) {
+            eModal.alert("Game has ended.Reset to continue");
+            return;
+        }
         console.log("Initial piece value:", $(this).text());
         if (yourTurn && $(this).text() === "+") {
             console.log("Clicked a tile");
@@ -268,8 +285,8 @@ $(function () {
 
     function hideTicTacToeGame() {
         $('#tic-tac-toe').hide();
-        $('#turnStatus').hide();
-        $('#typeOfPiece').hide();
+        $('#turnStatus').html("");
+        $('#typeOfPiece').html("");
     }
 
     function showGameOptions() {
